@@ -879,10 +879,20 @@ function Node
                 # with at least the node name
                 if ( -not $nodeDataMap[$nn] )
                 {
-                    $nodeDataMap[$nn] = @{
-                        NodeName = $nn
+                    $newNodeHash = if ($script:AllNodeSettings -is [hashtable])
+                    {
+                        $script:AllNodeSettings.Clone()
                     }
+                    else
+                    {
+                        @{}
+                    }
+
+                    $newNodeHash['NodeName'] = $nn
+
+                    $nodeDataMap[$nn] = $newNodeHash
                 }
+
                 $nodeDataMap[$nn] 
             }
 
@@ -1702,6 +1712,8 @@ function ValidateUpdate-ConfigurationData
         $ConfigurationData
     )
 
+    $script:AllNodeSettings = $null
+
     if( -not $ConfigurationData.ContainsKey('AllNodes'))
     {
         $errorMessage = $LocalizedData.ConfiguratonDataNeedAllNodes
@@ -1739,22 +1751,22 @@ function ValidateUpdate-ConfigurationData
         
         if($Node.NodeName -eq '*')
         {
-            $AllNodeSettings = $Node
+            $script:AllNodeSettings = $Node
         }
         [void] $nodeNames.Add($Node.NodeName)
     }
     
-    if($AllNodeSettings)
+    if($script:AllNodeSettings)
     {
         foreach($Node in $ConfigurationData.AllNodes)
         {
             if($Node.NodeName -ne '*') 
             {
-                foreach($nodeKey in $AllNodeSettings.Keys)
+                foreach($nodeKey in $script:AllNodeSettings.Keys)
                 {
                     if(-not $Node.ContainsKey($nodeKey))
                     {
-                        $Node.Add($nodeKey, $AllNodeSettings[$nodeKey])
+                        $Node.Add($nodeKey, $script:AllNodeSettings[$nodeKey])
                     }
                 }
             }
